@@ -1,0 +1,116 @@
+# Default values for spire-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## Provide a name in place of spire-server for `app:` labels
+##
+nameOverride: ""
+
+## Override the deployment namespace
+##
+namespaceOverride: ""
+
+## Provide a name to substitute for the full names of resources
+##
+fullnameOverride: ""
+
+serviceAccount: spire-agent
+trustDomain: "cluster.local"
+clusterName: demo-cluster
+socketPath: "/run/secrets/workload-spiffe-uds"
+images:
+  spireAgent:
+    image: gcr.io/spiffe-io/spire-agent:1.5.0
+    imagePullPolicy: "IfNotPresent"
+
+configmaps:
+  notifier:
+    bundleName: trust-bundle
+  # spire-agent configuration values
+  # visit https://github.com/spiffe/spire/blob/v1.4.0/doc/spire_agent.md#spire-agent-configuration-reference for reference
+  agentConfig:
+    dataDir: "/run/spire"
+    logLevel: "DEBUG"
+    serverAddress: "spire-server"
+    serverPort: "8081"
+    socketPath: "/run/secrets/workload-spiffe-uds/socket"
+    notifier:
+      configMap: "trust-bundle"
+      trustBundlePath: "/run/spire/bundle/root-cert.pem"
+    trustDomain: "cluster.local"
+
+    # federation configuration values
+    federates: false
+    sds:
+      defaultSvidName: ""
+      defaultBundleName: "null"
+      defaultAllBundlesName: "ROOTCA"
+      disableSpiffeCertValidation: "true"
+
+    # plugin configuration values
+    plugins:
+      # NodeAttestor configuration values
+      nodeAttestor:
+        type: "k8s_psat"
+        pluginData:
+          cluster: "demo-cluster"
+
+      # WorkloadAttestor configuration values
+      wokloadAttestors:
+        - type: "k8s"
+          pluginData:
+            skipKubeletVerification: true
+        - type: "unix"
+          pluginData:
+
+      # KeyManager configuration values
+      keyManager:
+        type: "memory"
+        pluginData:
+
+    # health_checks configuration values
+    healthChecks:
+      listenerEnabled: true
+      bindAddress: "0.0.0.0"
+      bindPort: "8080"
+      livePath: "/live"
+      readyPath: "/ready"
+
+replicaCount: 1
+
+imagePullSecrets: []
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

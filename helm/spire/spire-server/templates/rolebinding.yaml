@@ -1,0 +1,30 @@
+# Binds spire-server cluster role to spire-server service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name:  {{ template "spire-server.fullname" . }}-cluster-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccount }}
+    namespace: {{ template "spire-server.namespace" . }}
+roleRef:
+  kind: ClusterRole
+  name:  {{ template "spire-server.fullname" . }}-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding granting the spire-server-role to the SPIRE server
+# service account.
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name:  {{ template "spire-server.fullname" . }}-role-binding
+  namespace: {{ template "spire-server.namespace" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccount }}
+    namespace: {{ template "spire-server.namespace" . }}
+roleRef:
+  kind: Role
+  name:  {{ template "spire-server.fullname" . }}-role
+  apiGroup: rbac.authorization.k8s.io
+---

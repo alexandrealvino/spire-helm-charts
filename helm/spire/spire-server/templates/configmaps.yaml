@@ -1,0 +1,125 @@
+# ConfigMap containing the latest trust bundle for the trust domain. It is
+# updated by SPIRE using the k8sbundle notifier plugin. SPIRE Agents mount
+# this config map and uses the certificate to bootstrap trust with the SPIRE
+# Server during attestation.
+{{ if .Values.spireServer.config.plugins.k8sbundleNotifier.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.spireServer.config.plugins.k8sbundleNotifier.configMap }}
+  namespace: {{ template "spire-server.namespace" . }}
+{{ end }}
+---
+# ConfigMap containing the SPIRE server configuration.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "spire-server.fullname" . }}
+  namespace: {{ template "spire-server.namespace" . }}
+data:
+  server.conf: |
+    server {
+      bind_address = {{ .Values.spireServer.config.bindAddress | quote }}
+      bind_port = {{ .Values.spireServer.config.bindPort | quote }}
+      socket_path = {{ .Values.spireServer.config.socketPath | quote }}
+      trust_domain = {{ .Values.global.trustDomain | quote }}
+      data_dir = {{ .Values.spireServer.config.dataDir | quote }}
+      log_level = {{ .Values.spireServer.config.logLevel | quote }}
+      log_format = {{ .Values.spireServer.config.logFormat | quote }}
+      ca_key_type = {{ .Values.spireServer.config.caKeyType | quote }}
+      ca_ttl = {{ .Values.spireServer.config.caTTL | quote }}
+      default_x509_svid_ttl = {{ .Values.spireServer.config.defaultX509SvidTTL | quote }}
+      default_jwt_svid_ttl = {{ .Values.spireServer.config.defaultJwtSvidTTL | quote }}
+      ca_subject {
+        country = [{{ .Values.spireServer.config.caSubject.country | quote }}]
+        organization = [{{ .Values.spireServer.config.caSubject.organization | quote }}]
+        common_name = {{ .Values.spireServer.config.caSubject.commonName | default "" | quote }}
+      }
+      {{ if eq .Values.spireServer.config.federates true }}
+
+      federation {
+        bundle_endpoint {
+          address = {{ .Values.spireServer.config.federation.bundleEndpoint.address | quote }}
+          port = {{ .Values.spireServer.config.federation.bundleEndpoint.port }}
+        }
+        {{ range $index, $member := .Values.spireServer.config.federation.federations }}
+        federates_with {{ $member.federatesWith | quote }} {
+          bundle_endpoint_url = {{ $member.bundleEndpointUrl | quote }}
+          bundle_endpoint_profile {{ $member.bundleEndpointProfile.profile | quote }} {
+            {{ if eq $member.bundleEndpointProfile.profile "https_spiffe" }}
+            endpoint_spiffe_id = "{{ $member.bundleEndpointProfile.endpointSpiffeId }}"
+            {{ else }}
+            {}
+            {{ end }}
+          }
+        }
+        {{ end }}
+      }
+      {{ end }}
+    }
+
+    plugins {
+      DataStore {{ .Values.spireServer.config.plugins.dataStore.type | quote }} {
+        plugin_data {
+          database_type = {{ .Values.spireServer.config.plugins.dataStore.pluginData.dataBaseType | quote }}
+          connection_string = {{ .Values.spireServer.config.plugins.dataStore.pluginData.connectionString | quote }}
+        }
+      }
+
+      NodeAttestor {{ .Values.spireServer.config.plugins.nodeAttestor.attestor | quote }} {
+        plugin_data {
+          clusters = {
+            # NOTE: Change this to your cluster name
+            {{ range $index, $member := .Values.spireServer.config.plugins.nodeAttestor.pluginData.clusters }}
+            {{ $member.clusterName | quote }} = {
+              use_token_review_api_validation = {{ $member.useTokenReviewApiValidation }}
+              service_account_allow_list = [{{ $member.serviceAccountAllowList | quote }}]
+            }
+            {{ end }}
+          }
+        }
+      }
+
+      KeyManager {{ .Values.spireServer.config.plugins.keyManager.type | quote }} {
+        plugin_data {
+          keys_path = {{ .Values.spireServer.config.plugins.keyManager.pluginData.keysPath | quote }}
+        }
+      }
+
+      {{ if .Values.spireServer.config.plugins.k8sbundleNotifier.enabled }}
+      Notifier "k8sbundle" {
+        plugin_data {
+          namespace = {{ include "spire-server.namespace" . | quote }}
+          config_map = {{ .Values.spireServer.config.plugins.k8sbundleNotifier.configMap | quote }}
+          config_map_key = {{ .Values.spireServer.config.plugins.k8sbundleNotifier.configMapKey | quote }}
+        }
+      }
+      {{ end }}
+
+      {{ if eq .Values.spireServer.config.plugins.withUpstreamAuthority true }}
+      UpstreamAuthority {{ .Values.spireServer.config.plugins.upstreamAuthority.type | quote }} {
+        plugin_data {
+          {{ if eq .Values.spireServer.config.plugins.upstreamAuthority.type "spire" }}
+          server_address = {{ .Values.spireServer.config.plugins.upstreamAuthority.serverAddress | quote }},
+          server_port = {{ .Values.spireServer.config.plugins.upstreamAuthority.serverPort | quote }},
+          workload_api_socket = {{ .Values.spireServer.config.plugins.upstreamAuthority.workloadApiSocket | quote }}
+          {{ end }}
+          {{ if eq .Values.spireServer.config.plugins.upstreamAuthority.type "disk" }}
+          cert_file_path = {{ .Values.spireServer.config.plugins.upstreamAuthority.certFilePath | quote }},
+          key_file_path = {{ .Values.spireServer.config.plugins.upstreamAuthority.keyFilePath | quote }},
+          {{ if not empty .Values.spireServer.config.plugins.upstreamAuthority.bundleFilePath }}
+          bundle_file_path = {{ .Values.spireServer.config.plugins.upstreamAuthority.bundleFilePath | quote }}
+          {{ end }}
+          {{ end }}
+        }
+      }
+      {{ end }}
+    }
+
+    health_checks {
+      listener_enabled = {{ .Values.spireServer.config.healthChecks.listenerEnabled }}
+      bind_address = {{ .Values.spireServer.config.healthChecks.bindAddress | quote }}
+      bind_port = {{ .Values.spireServer.config.healthChecks.bindPort | quote }}
+      live_path = {{ .Values.spireServer.config.healthChecks.livePath | quote }}
+      ready_path = {{ .Values.spireServer.config.healthChecks.readyPath | quote }}
+    }

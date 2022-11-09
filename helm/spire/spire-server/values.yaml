@@ -1,0 +1,193 @@
+# Default values for spire-server.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## Provide a name in place of spire-server for `app:` labels
+##
+nameOverride: ""
+
+## Override the deployment namespace
+##
+namespaceOverride: ""
+
+## Provide a name to substitute for the full names of resources
+##
+fullnameOverride: ""
+
+global:
+  # The trust domain that this server belongs to (should be no more than 255 characters)
+  trustDomain: "cluster.local"
+
+serviceAccount: spire-server
+replicas: 2
+images:
+  spireServer:
+    image: gcr.io/spiffe-io/spire-server:1.5.0
+    imagePullPolicy: "IfNotPresent"
+  spireControllerManager:
+    image: ghcr.io/spiffe/spire-controller-manager:0.2.1
+    imagePullPolicy: "IfNotPresent"
+
+# spire-server configuration values
+# visit https://github.com/spiffe/spire/blob/v1.4.1/doc/spire_server.md#server-configuration-file for reference
+spireServer:
+  config:
+    # IP address or DNS name of the SPIRE server
+    bindAddress: "0.0.0.0"
+
+    # HTTP Port number of the SPIRE server
+    bindPort: 8081
+
+    # Path to bind the SPIRE Server API socket to (Unix only)
+    socketPath: "/run/spire/sockets/api.sock"
+
+    # A directory the server can use for its runtime
+    dataDir: "/run/spire/server/data"
+
+    # Sets the logging level <DEBUG|INFO|WARN|ERROR>
+    logLevel: "DEBUG"
+
+    # Format of logs, <text|json>
+    logFormat: "text"
+
+    # The key type used for the server CA (both X509 and JWT), <rsa-2048|rsa-4096|ec-p256|ec-p384>
+    caKeyType: "ec-p256"
+
+    # The default CA/signing key TTL
+    caTTL: "24h"
+
+    # The default X509-SVID TTL
+    defaultX509SvidTTL: "1h"
+
+    # The default JWT-SVID TTL
+    defaultJwtSvidTTL: "5m"
+
+    # The Subject that CA certificates should use
+    caSubject:
+      country: "US"
+      organization: "SPIFFE"
+      commonName:
+
+    # federation configuration values
+    federates: false
+    federation:
+        bundleEndpoint:
+          address: "0.0.0.0"
+          port: "8443"
+          withAcme: false
+          acme:
+            directoryUrl: ""
+            domainName: ""
+            email: ""
+            tosAccepted: ""
+        federations:
+          - federatesWith: "domain.test"
+            bundleEndpointUrl: "https://192.168.0.16:4002"
+            bundleEndpointProfile:
+              profile: "https_spiffe"
+              endpointSpiffeId: "spiffe://domain.test/spire/server"
+
+    # Plugin configuration values
+    plugins:
+      # DataStore configuration values
+      dataStore:
+        type: "sql"
+        pluginData:
+          dataBaseType: "sqlite3"
+          connectionString: "/run/spire/data/datastore.sqlite3"
+
+      # NodeAttestor configuration values
+      nodeAttestor:
+        attestor: "k8s_psat"
+        pluginData:
+          clusters:
+            - clusterName: "demo-cluster"
+              useTokenReviewApiValidation: "true"
+              serviceAccountAllowList: "spire:spire-agent"
+
+      # KeyManager configuration values
+      keyManager:
+        type: "disk"
+        pluginData:
+          keysPath: "/run/spire/data/keys.json"
+
+      # Notifier configuration values
+      k8sbundleNotifier:
+        enabled: true
+        configMap: "trust-bundle"
+        configMapKey: "root-cert.pem"
+
+      # UpstreamAuthority configuration values
+      withUpstreamAuthority: false
+    #    upstreamAuthority:
+    #      type: "spire"
+    #      serverAddress: "10.0.1.50"
+    #      serverPort: "8081"
+    #      workloadApiSocket: "/tmp/agent-nestedA.sock"
+
+    #    upstreamAuthority:
+    #      type: "disk"
+    #      key_file_path = "/run/spire/data/upstream-ca.key.pem"
+    #      cert_file_path = "/run/spire/data/upstream-ca.pem"
+    #      bundle_file_path = "/run/spire/data/bundle.pem"
+
+    # health_checks configuration values
+    healthChecks:
+      listenerEnabled: true
+      bindAddress: "0.0.0.0"
+      bindPort: "8080"
+      livePath: "/live"
+      readyPath: "/ready"
+
+controllerManager:
+  config:
+    # The name of the cluster
+    clusterName: demo-cluster
+
+imagePullSecrets: []
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# services
+serviceSpire:
+  type: NodePort
+  ports:
+   - name: api
+     port: 8081
+     targetPort: 8081
+     protocol: TCP
+serviceBundleEndpoint:
+  name: spire-server-bundle-endpoint
+  type: NodePort
+  ports:
+    - name: api
+      port: 8443
+      protocol: TCP
+serviceControllerWebhook:
+  name: spire-controller-manager-webhook-service
+  type: NodePort
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
+
+resources:
+  requests:
+    storage: "1Gi"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

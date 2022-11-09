@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name:  {{ template "spire-server.fullname" . }}
+  namespace: {{ template "spire-server.namespace" . }}
+spec:
+  type: {{ .Values.serviceSpire.type }}
+  ports:
+{{ .Values.serviceSpire.ports | toYaml | indent 4 }}
+  selector:
+    app: {{ template "spire-server.name" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.serviceBundleEndpoint.name }}
+  namespace: {{ template "spire-server.namespace" . }}
+spec:
+  type: {{ .Values.serviceBundleEndpoint.type }}
+  ports:
+{{ .Values.serviceBundleEndpoint.ports | toYaml | indent 4 }}
+  selector:
+    app: {{ template "spire-server.name" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.serviceControllerWebhook.name }}
+  namespace: {{ template "spire-server.namespace" . }}
+spec:
+  type: {{ .Values.serviceControllerWebhook.type }}
+  ports:
+{{ .Values.serviceControllerWebhook.ports | toYaml | indent 4 }}
+  selector:
+    app: {{ template "spire-server.name" . }}

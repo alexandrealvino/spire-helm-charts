@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "spire-agent.fullname" . }}
+  namespace: {{ template "spire-agent.namespace" . }}
+  labels:
+    app: {{ template "spire-agent.name" . }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "spire-agent.name" . }}
+  template:
+    metadata:
+      namespace: {{ template "spire-agent.namespace" . }}
+      labels:
+        app: {{ template "spire-agent.name" . }}
+    spec:
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccountName: {{ .Values.serviceAccount }}
+      initContainers:
+        - name: init
+          # This is a small image with wait-for-it, choose whatever image
+          # you prefer that waits for a service to be up. This image is built
+          # from https://github.com/lqhl/wait-for-it
+          image: gcr.io/spiffe-io/wait-for-it
+          args: ["-t", "30", "spire-server:8081"]
+      containers:
+        - name: {{ template "spire-agent.name" . }}
+          image: {{ .Values.images.spireAgent.image }}
+          imagePullPolicy: {{ .Values.images.spireAgent.imagePullPolicy }}
+          args: ["-config", "/run/spire/config/agent.conf"]
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-bundle
+              mountPath: /run/spire/bundle
+            - name: spire-agent-socket-dir
+              mountPath: {{ .Values.socketPath }}
+            - name: spire-token
+              mountPath: /var/run/secrets/tokens
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+            failureThreshold: 2
+            initialDelaySeconds: 15
+            periodSeconds: 60
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: spire-config
+          configMap:
+            name: {{ template "spire-agent.fullname" . }}
+        - name: spire-bundle
+          configMap:
+            name: {{ .Values.configmaps.notifier.bundleName }}
+        - name: spire-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: spire-agent
+                  expirationSeconds: 7200
+                  audience: spire-server
+        # This volume is used to share the workload api socket between the
+        # CSI driver and SPIRE agent
+        - name: spire-agent-socket-dir
+          hostPath:
+            path: /run/spire/socket-dir
+            type: DirectoryOrCreate

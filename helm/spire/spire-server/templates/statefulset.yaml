@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name:  {{ template "spire-server.fullname" . }}
+  namespace: {{ template "spire-server.namespace" . }}
+  labels:
+    app: {{ template "spire-server.name" . }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "spire-server.name" . }}
+  serviceName: {{ template "spire-server.fullname" . }}
+  template:
+    metadata:
+      namespace: {{ template "spire-server.namespace" . }}
+      labels:
+        app: {{ template "spire-server.name" . }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount }}
+      shareProcessNamespace: true
+      containers:
+        - name: {{ template "spire-server.name" . }}
+          image: {{ .Values.images.spireServer.image }}
+          imagePullPolicy: {{ .Values.images.spireServer.imagePullPolicy }}
+          args: ["-config", "/run/spire/config/server.conf"]
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+            failureThreshold: 2
+            initialDelaySeconds: 15
+            periodSeconds: 60
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-data
+              mountPath: /run/spire/data
+              readOnly: false
+            - name: spire-registration-socket
+              mountPath: /run/spire/sockets
+              readOnly: false
+        - name: spire-controller-manager
+          image: {{ .Values.images.spireControllerManager.image }}
+          imagePullPolicy: {{ .Values.images.spireServer.imagePullPolicy }}
+          ports:
+            - containerPort: 9443
+          args:
+            - "--config=spireControllerManagerConfig.yaml"
+          volumeMounts:
+            - name: spire-registration-socket
+              mountPath: /spire-server
+              readOnly: true
+            - name: spire-controller-manager-config
+              mountPath: /spireControllerManagerConfig.yaml
+              subPath: spireControllerManagerConfig.yaml
+      volumes:
+        - name: spire-config
+          configMap:
+            name: {{ template "spire-server.fullname" . }}
+        - name: spire-registration-socket
+          hostPath:
+            path: /run/spire/server-sockets
+            type: DirectoryOrCreate
+        - name: spire-controller-manager-config
+          configMap:
+            name: spire-controller-manager-config
+  volumeClaimTemplates:
+    - metadata:
+        name: spire-data
+        namespace: spire
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.resources.requests.storage }}

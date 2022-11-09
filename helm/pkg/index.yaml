@@ -1,0 +1,36 @@
+apiVersion: v1
+entries:
+  spiffe-csi-driver:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2022-11-09T09:46:10.359925-03:00"
+    description: A Helm chart for the SPIFFE CSI Driver
+    digest: f3a78873c7ce086badb6412940c69eec02547d6ccad7f22cf68508819d41f074
+    name: spiffe-csi-driver
+    type: application
+    urls:
+    - https://alexandrealvino.github.io/spire-helm-charts/helm/pkg/spiffe-csi-driver-0.2.0.tgz
+    version: 0.2.0
+  spire-agent:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2022-11-09T09:46:10.360502-03:00"
+    description: A Helm chart for SPIRE Agent
+    digest: 4556d4f4f61f6f7575360db668f0e93ac9282bd02622e8740c900abb0b004b32
+    name: spire-agent
+    type: application
+    urls:
+    - https://alexandrealvino.github.io/spire-helm-charts/helm/pkg/spire-agent-1.5.0.tgz
+    version: 1.5.0
+  spire-server:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2022-11-09T09:46:10.361438-03:00"
+    description: A Helm chart for SPIRE Server
+    digest: db97d4da0ee50c0cef862cced2c99a9ee109921232a80f48442ee624cc0df97b
+    name: spire-server
+    type: application
+    urls:
+    - https://alexandrealvino.github.io/spire-helm-charts/helm/pkg/spire-server-1.5.0.tgz
+    version: 1.5.0
+generated: "2022-11-09T09:46:10.359298-03:00"
