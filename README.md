@@ -1,6 +1,6 @@
 # spire-helm-charts
 
-A helm chart repository for a SPIRE installation
+A helm chart repository for a SPIRE installation developed by HPE.
 
 # Helm repo
 
