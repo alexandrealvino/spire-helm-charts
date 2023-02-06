@@ -2,46 +2,55 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-## Provide a name in place of spire-server for `app:` labels
-##
+## Provide a name in place of spire-agent for `app:` labels
 nameOverride: ""
 
 ## Override the deployment namespace
-##
 namespaceOverride: ""
 
 ## Provide a name to substitute for the full names of resources
-##
+
 fullnameOverride: ""
 
+global:
+  # The trust domain that this agent belongs to (should be no more than 255 characters)
+  trustDomain: "cluster.local"
+  clusterName: "demo-cluster"
+
 serviceAccount: spire-agent
-trustDomain: "cluster.local"
-clusterName: demo-cluster
-socketPath: "/run/secrets/workload-spiffe-uds"
 images:
   spireAgent:
-    image: gcr.io/spiffe-io/spire-agent:1.5.0
+    image: gcr.io/spiffe-io/spire-agent:1.5.4
     imagePullPolicy: "IfNotPresent"
 
-configmaps:
-  notifier:
-    bundleName: trust-bundle
-  # spire-agent configuration values
-  # visit https://github.com/spiffe/spire/blob/v1.4.0/doc/spire_agent.md#spire-agent-configuration-reference for reference
-  agentConfig:
+# spire-agent configuration values
+# visit https://github.com/spiffe/spire/blob/v1.5.4/doc/spire_agent.md#agent-configuration-file for reference
+spireAgent:
+  config:
+    # A directory the agent can use for its runtime data
     dataDir: "/run/spire"
-    logLevel: "DEBUG"
-    serverAddress: "spire-server"
-    serverPort: "8081"
-    socketPath: "/run/secrets/workload-spiffe-uds/socket"
-    notifier:
-      configMap: "trust-bundle"
-      trustBundlePath: "/run/spire/bundle/root-cert.pem"
-    trustDomain: "cluster.local"
 
-    # federation configuration values
-    federates: false
+    # Sets the logging level <DEBUG|INFO|WARN|ERROR>
+    logLevel: "DEBUG"
+
+    # DNS name or IP address of the SPIRE server
+    serverAddress: "spire-server"
+
+    # Port number of the SPIRE server
+    serverPort: "8081"
+
+    # Location to bind the SPIRE Agent API socket (Unix only)
+    socketPath: "/run/secrets/workload-spiffe-uds/socket"
+
+    # Socket folder location
+    socketFolder: "/run/secrets/workload-spiffe-uds"
+
+    # Path to the SPIRE server CA bundle
+    trustBundlePath: "/run/spire/bundle/root-cert.pem"
+
+    # Optional SDS configuration section
     sds:
+      enabled: false
       defaultSvidName: ""
       defaultBundleName: "null"
       defaultAllBundlesName: "ROOTCA"
@@ -60,6 +69,7 @@ configmaps:
         - type: "k8s"
           pluginData:
             skipKubeletVerification: true
+            disableContainerSelectors: true
         - type: "unix"
           pluginData:
 
@@ -67,6 +77,10 @@ configmaps:
       keyManager:
         type: "memory"
         pluginData:
+
+      # Notifier configuration values
+      notifier:
+        bundleName: "trust-bundle"
 
     # health_checks configuration values
     healthChecks:
@@ -93,21 +107,12 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+# services
 service:
   type: ClusterIP
   port: 80
 
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
 
 nodeSelector: {}
 

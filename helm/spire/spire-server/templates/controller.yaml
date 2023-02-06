@@ -15,7 +15,7 @@ data:
       leaderElect: true
       resourceName: 98c9c988.spiffe.io
       resourceNamespace: {{ template "spire-server.namespace" . }}
-    clusterName: {{ .Values.controllerManager.config.clusterName }}
+    clusterName: {{ .Values.global.clusterName }}
     trustDomain: {{ .Values.global.trustDomain }}
     ignoreNamespaces: ["kube-system", "kube-public", "local-path-storage", "spire"]
 ---

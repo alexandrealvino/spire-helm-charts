@@ -38,7 +38,7 @@ spec:
             - name: spire-bundle
               mountPath: /run/spire/bundle
             - name: spire-agent-socket-dir
-              mountPath: {{ .Values.socketPath }}
+              mountPath: {{ .Values.spireAgent.config.socketFolder }}
             - name: spire-token
               mountPath: /var/run/secrets/tokens
           livenessProbe:
@@ -61,7 +61,7 @@ spec:
             name: {{ template "spire-agent.fullname" . }}
         - name: spire-bundle
           configMap:
-            name: {{ .Values.configmaps.notifier.bundleName }}
+            name: {{ .Values.spireAgent.config.plugins.notifier.bundleName }}
         - name: spire-token
           projected:
             sources:

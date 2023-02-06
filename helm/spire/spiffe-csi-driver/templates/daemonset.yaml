@@ -4,7 +4,7 @@ metadata:
   name: {{ template "spiffe-csi-driver.fullname" . }}
   namespace: {{ template "spiffe-csi-driver.namespace" . }}
   labels:
-    app: {{ .Values.name }}
+    app: {{ template "spiffe-csi-driver.name" . }}
 spec:
   selector:
     matchLabels:
@@ -15,7 +15,7 @@ spec:
       labels:
         app: {{ template "spiffe-csi-driver.name" . }}
     spec:
-      serviceAccountName: {{ .Values.name }}
+      serviceAccountName: {{ .Values.serviceAccount }}
       containers:
         # This is the container which runs the SPIFFE CSI driver.
         - name: {{ template "spiffe-csi-driver.name" . }}
