@@ -3,9 +3,9 @@ entries:
   spiffe-csi-driver:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-11-09T09:46:10.359925-03:00"
+    created: "2023-02-06T17:53:07.198387164-03:00"
     description: A Helm chart for the SPIFFE CSI Driver
-    digest: f3a78873c7ce086badb6412940c69eec02547d6ccad7f22cf68508819d41f074
+    digest: bb85ee6beadeb35c1df75485a90c73dfffd894ce920e12e84ba3c832cbbf016b
     name: spiffe-csi-driver
     type: application
     urls:
@@ -14,7 +14,17 @@ entries:
   spire-agent:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-11-09T09:46:10.360502-03:00"
+    created: "2023-02-06T17:53:07.199212518-03:00"
+    description: A Helm chart for SPIRE Agent
+    digest: 544c2d7e8505a7c2a4a665e2fda814b4cea302d19485d2db3bd7e112f8bcd40c
+    name: spire-agent
+    type: application
+    urls:
+    - https://alexandrealvino.github.io/spire-helm-charts/helm/pkg/spire-agent-1.5.4.tgz
+    version: 1.5.4
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2023-02-06T17:53:07.198806268-03:00"
     description: A Helm chart for SPIRE Agent
     digest: 4556d4f4f61f6f7575360db668f0e93ac9282bd02622e8740c900abb0b004b32
     name: spire-agent
@@ -25,7 +35,17 @@ entries:
   spire-server:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-11-09T09:46:10.361438-03:00"
+    created: "2023-02-06T17:53:07.201327047-03:00"
+    description: A Helm chart for SPIRE Server
+    digest: 9c1cf8db9a21df04b0082fa73a1eabd776d57757d122aa7018f069e7dbdefb41
+    name: spire-server
+    type: application
+    urls:
+    - https://alexandrealvino.github.io/spire-helm-charts/helm/pkg/spire-server-1.5.4.tgz
+    version: 1.5.4
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2023-02-06T17:53:07.199864815-03:00"
     description: A Helm chart for SPIRE Server
     digest: db97d4da0ee50c0cef862cced2c99a9ee109921232a80f48442ee624cc0df97b
     name: spire-server
@@ -33,4 +53,4 @@ entries:
     urls:
     - https://alexandrealvino.github.io/spire-helm-charts/helm/pkg/spire-server-1.5.0.tgz
     version: 1.5.0
-generated: "2022-11-09T09:46:10.359298-03:00"
+generated: "2023-02-06T17:53:07.198037461-03:00"
